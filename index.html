@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>HulvorArb</title>
+<meta name="description" content="Scanner de arbitraje Polymarket vs casas de apuestas" />
+<meta name="theme-color" content="#185FA5" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="HulvorArb" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
+<style>
+  :root {
+    --blue: #185FA5;
+    --blue-dark: #0C447C;
+    --blue-light: #E6F1FB;
+    --green: #0F6E56;
+    --green-light: #EAF3DE;
+    --green-mid: #97C459;
+    --amber: #854F0B;
+    --amber-light: #FAEEDA;
+    --red: #791F1F;
+    --red-light: #FCEBEB;
+    --gray: #888780;
+    --bg: #ffffff;
+    --bg2: #F1EFE8;
+    --bg3: #f8f8f6;
+    --text: #2C2C2A;
+    --text2: #5F5E5A;
+    --text3: #888780;
+    --border: rgba(0,0,0,0.12);
+    --border2: rgba(0,0,0,0.22);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --bg2: #242424;
+      --bg3: #2a2a2a;
+      --text: #f0efec;
+      --text2: #b4b2a9;
+      --text3: #888780;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.2);
+      --blue-light: #0c2a45;
+      --green-light: #0a2a1e;
+      --amber-light: #2a1a05;
+      --red-light: #2a0a0a;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg3); color: var(--text); font-size: 15px; }
+  
+  /* LAYOUT */
+  .app { display: flex; flex-direction: column; height: 100vh; max-width: 480px; margin: 0 auto; background: var(--bg); }
+  
+  /* HEADER */
+  .header { background: var(--blue); color: #fff; padding: 14px 16px 10px; padding-top: calc(14px + env(safe-area-inset-top)); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .logo { font-size: 18px; font-weight: 600; letter-spacing: -0.03em; }
+  .logo span { opacity: 0.7; font-weight: 400; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .credits-pill { background: rgba(255,255,255,0.2); font-size: 11px; padding: 3px 8px; border-radius: 20px; }
+  .icon-btn { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 17px; }
+
+  /* TABS */
+  .tabs { display: flex; border-bottom: 0.5px solid var(--border); background: var(--bg); flex-shrink: 0; }
+  .tab { flex: 1; padding: 10px 4px 9px; font-size: 12px; color: var(--text3); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; display: flex; flex-direction: column; align-items: center; gap: 2px; transition: color 0.15s; }
+  .tab i { font-size: 18px; }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* SCROLL CONTENT */
+  .content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 14px calc(14px + env(safe-area-inset-bottom)); }
+
+  /* METRICS */
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .metrics-5 { grid-template-columns: repeat(2, 1fr); }
+  .metric { background: var(--bg2); border-radius: var(--radius); padding: 11px 13px; }
+  .metric-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 3px; }
+  .metric-value { font-size: 22px; font-weight: 600; }
+  .metric-value.blue { color: var(--blue); }
+  .metric-value.green { color: var(--green); }
+  .metric-value.amber { color: var(--amber); }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .section-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* SCAN BTN */
+  .btn-scan { background: var(--green); color: #fff; border: none; padding: 7px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+  .btn-scan:disabled { background: var(--gray); }
+  .btn-scan .spinner { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* OPP CARDS */
+  .opp-list { display: flex; flex-direction: column; gap: 8px; }
+  .opp-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 13px 14px; cursor: pointer; transition: border-color 0.15s; box-shadow: var(--shadow); }
+  .opp-card.selected { border-color: var(--blue); border-width: 1.5px; }
+  .opp-event { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .opp-meta { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+  .badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
+  .badge-tomable { background: var(--green-light); color: var(--green); }
+  .badge-revisar { background: var(--amber-light); color: var(--amber); }
+  .badge-no { background: var(--red-light); color: var(--red); }
+  .badge-alta { background: var(--blue-light); color: var(--blue-dark); }
+  .badge-media { background: var(--amber-light); color: var(--amber); }
+  .badge-cross { background: var(--bg2); color: var(--text2); }
+  .risk-tag { font-size: 10px; background: var(--red-light); color: var(--red); padding: 2px 6px; border-radius: 4px; }
+  .opp-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 0.5px solid var(--border); }
+  .opp-num-label { font-size: 10px; color: var(--text3); margin-bottom: 2px; }
+  .opp-num-val { font-size: 13px; font-weight: 600; }
+  .opp-num-val.pos { color: var(--green); }
+  .roi-badge { font-size: 17px; font-weight: 700; }
+  .roi-badge.pos { color: var(--green); }
+  .roi-badge.neg { color: var(--red); }
+
+  /* DETAIL */
+  .detail { margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--border); }
+  .detail-sides { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 12px; }
+  .scenarios { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .scenario { background: var(--bg2); border-radius: var(--radius-sm); padding: 11px 12px; }
+  .sc-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; }
+  .sc-gain { font-size: 19px; font-weight: 700; color: var(--green); }
+  .sc-sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .limits { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .limit-box { background: var(--blue-light); border-radius: var(--radius-sm); padding: 9px 11px; }
+  .limit-label { font-size: 10px; color: var(--blue); margin-bottom: 3px; font-weight: 600; }
+  .limit-val { font-size: 13px; font-weight: 600; color: var(--blue-dark); }
+  .checklist { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+  .check-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .check-dot { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .check-ok { background: var(--green-light); color: var(--green); }
+  .check-fail { background: var(--red-light); color: var(--red); }
+  .action-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-primary { background: var(--blue); color: #fff; border: none; padding: 9px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; }
+  .btn-secondary { background: none; color: var(--text2); border: 0.5px solid var(--border2); padding: 9px 14px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; }
+  .btn-danger { background: none; color: var(--red); border: 0.5px solid #F09595; padding: 9px 14px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; }
+
+  /* MESSAGES */
+  .msg { border-radius: var(--radius-sm); padding: 11px 13px; font-size: 13px; margin-bottom: 12px; line-height: 1.5; }
+  .msg-success { background: var(--green-light); color: var(--green); }
+  .msg-error { background: var(--red-light); color: var(--red); }
+  .msg-info { background: var(--blue-light); color: var(--blue-dark); }
+
+  /* FORM */
+  .panel { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 15px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .panel-title { font-size: 14px; font-weight: 600; margin-bottom: 13px; }
+  .form-group { margin-bottom: 11px; }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+  input[type=text], input[type=number], select {
+    width: 100%; padding: 9px 11px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm);
+    font-size: 14px; background: var(--bg); color: var(--text); font-family: inherit;
+    -webkit-appearance: none; appearance: none;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--blue); }
+  .form-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* CALC RESULT */
+  .calc-result { background: var(--bg2); border-radius: var(--radius); padding: 13px; margin-top: 12px; }
+  .result-status { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .result-item { padding: 6px 0; border-bottom: 0.5px solid var(--border); }
+  .result-item:nth-last-child(-n+2) { border-bottom: none; }
+  .result-label { font-size: 10px; color: var(--text3); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .result-val { font-size: 14px; font-weight: 600; }
+  .result-val.go { color: var(--green); }
+  .result-val.stop { color: var(--red); }
+  .result-val.warn { color: var(--amber); }
+
+  /* HISTORY */
+  .hist-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 0.5px solid var(--border); }
+  .hist-row:last-child { border-bottom: none; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--text3); font-size: 13px; line-height: 1.8; }
+  .empty i { font-size: 36px; display: block; margin-bottom: 8px; }
+
+  /* INSTALL BANNER */
+  .install-banner { background: var(--blue); color: #fff; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0; }
+  .install-banner p { font-size: 12px; line-height: 1.4; }
+  .install-btn { background: #fff; color: var(--blue); border: none; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+  /* FILTER */
+  .filter-select { font-size: 12px; padding: 5px 8px; border: 0.5px solid var(--border2); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); -webkit-appearance: none; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- INSTALL BANNER -->
+  <div class="install-banner" id="install-banner" style="display:none">
+    <p><strong>Instalar HulvorArb</strong><br>Agrégala a tu pantalla de inicio</p>
+    <button class="install-btn" onclick="installPWA()">Instalar</button>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">Hulvor<span>Arb</span></div>
+    <div class="header-right">
+      <div class="credits-pill" id="credits-display" style="display:none"></div>
+      <button class="icon-btn" onclick="showTab('settings')" aria-label="Configuración"><i class="ti ti-settings"></i></button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('dashboard')" id="tab-dashboard"><i class="ti ti-radar"></i>Scanner</button>
+    <button class="tab" onclick="showTab('calc')" id="tab-calc"><i class="ti ti-calculator"></i>Calc</button>
+    <button class="tab" onclick="showTab('history')" id="tab-history"><i class="ti ti-history"></i>Historial</button>
+    <button class="tab" onclick="showTab('settings')" id="tab-settings"><i class="ti ti-settings"></i>Config</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="content" id="view-dashboard">
+    <div class="metrics metrics-5">
+      <div class="metric"><div class="metric-label">Activas</div><div class="metric-value blue" id="m-total">—</div></div>
+      <div class="metric"><div class="metric-label">Tomables</div><div class="metric-value green" id="m-tomable">—</div></div>
+      <div class="metric"><div class="metric-label">Revisar</div><div class="metric-value amber" id="m-revisar">—</div></div>
+      <div class="metric"><div class="metric-label">Mejor ROI</div><div class="metric-value green" id="m-roi">—</div></div>
+      <div class="metric"><div class="metric-label">Capital total</div><div class="metric-value blue" id="m-capital">—</div></div>
+    </div>
+
+    <div id="msg-area"></div>
+
+    <div class="section-header">
+      <span class="section-title">Oportunidades</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="filter-select" id="filter-status" onchange="renderOpps()">
+          <option value="all">Todas</option>
+          <option value="TOMABLE">Tomable</option>
+          <option value="REVISAR">Revisar</option>
+          <option value="NO_TOMABLE">No tomable</option>
+        </select>
+        <button class="btn-scan" id="btn-scan" onclick="runScan()">
+          <i class="ti ti-refresh"></i> Escanear
+        </button>
+      </div>
+    </div>
+    <div class="opp-list" id="opp-list">
+      <div class="empty"><i class="ti ti-radar"></i>Configura tu API key<br>en <strong>Config</strong> y presiona<br><strong>Escanear</strong></div>
+    </div>
+  </div>
+
+  <!-- CALCULADORA -->
+  <div class="content" id="view-calc" style="display:none">
+    <div class="panel">
+      <div class="panel-title">Calculadora manual</div>
+      <div class="form-grid2">
+        <div class="form-group" style="grid-column:1/-1"><label class="form-label">Evento</label><input type="text" id="c-event" placeholder="ej. Argentina clasifica" /></div>
+        <div class="form-group" style="grid-column:1/-1"><label class="form-label">Casa de apuestas</label><input type="text" id="c-book" placeholder="ej. Caliente" /></div>
+        <div class="form-group"><label class="form-label">Precio Polymarket</label><input type="number" id="c-poly" value="0.62" step="0.01" oninput="calcManual()" /></div>
+        <div class="form-group"><label class="form-label">Cuota decimal</label><input type="number" id="c-odds" value="2.80" step="0.01" oninput="calcManual()" /></div>
+        <div class="form-group"><label class="form-label">Capital (USD)</label><input type="number" id="c-capital" value="1000" oninput="calcManual()" /></div>
+        <div class="form-group"><label class="form-label">Fee Polymarket %</label><input type="number" id="c-fee-poly" value="2" step="0.1" oninput="calcManual()" /></div>
+        <div class="form-group" style="grid-column:1/-1"><label class="form-label">Tipo de mercado</label>
+          <select id="c-mtype" onchange="calcManual()">
+            <option value="binary_clean">Gana / clasifica / avanza</option>
+            <option value="draw_risk">Con riesgo de empate</option>
+            <option value="push_risk">Con push/void</option>
+          </select></div>
+        <div class="form-group" style="grid-column:1/-1"><label class="form-label">Confianza</label>
+          <select id="c-conf" onchange="calcManual()">
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="baja">Baja</option>
+          </select></div>
+      </div>
+      <div id="calc-result"></div>
+      <div style="margin-top:12px"><button class="btn-primary" onclick="saveManualOpp()">Guardar en dashboard</button></div>
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="content" id="view-history" style="display:none">
+    <div class="panel">
+      <div class="panel-title">Historial</div>
+      <div id="history-list"><div class="empty" style="padding:1.5rem 0"><i class="ti ti-clock"></i>Sin historial aún</div></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="content" id="view-settings" style="display:none">
+    <div class="panel">
+      <div class="panel-title">API Keys</div>
+      <div class="form-group">
+        <label class="form-label">The Odds API Key</label>
+        <input type="text" id="s-odds-key" placeholder="Pega tu key aquí" autocomplete="off" />
+      </div>
+      <div class="msg msg-info" style="font-size:12px"><i class="ti ti-info-circle"></i> Polymarket es pública, no requiere key. The Odds API cubre Bet365, DraftKings, Betway y ~80 casas más.</div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Filtros</div>
+      <div class="form-grid2">
+        <div class="form-group"><label class="form-label">Capital (USD)</label><input type="number" id="s-capital" value="1000" /></div>
+        <div class="form-group"><label class="form-label">ROI mínimo %</label><input type="number" id="s-min-roi" value="0.5" step="0.1" /></div>
+        <div class="form-group"><label class="form-label">Fee Polymarket %</label><input type="number" id="s-fee-poly" value="2" step="0.1" /></div>
+        <div class="form-group"><label class="form-label">Precio máx. Poly</label><input type="number" id="s-max-poly" value="0.95" step="0.01" /></div>
+        <div class="form-group"><label class="form-label">Cuota mín.</label><input type="number" id="s-min-odds" value="1.10" step="0.01" /></div>
+        <div class="form-group"><label class="form-label">USD/MXN</label><input type="number" id="s-fx" value="17.5" step="0.1" /></div>
+      </div>
+      <div class="form-group"><label class="form-label">Deporte</label>
+        <select id="s-sport">
+          <option value="soccer_epl">Fútbol — Premier League</option>
+          <option value="soccer_fifa_world_cup">Fútbol — Mundial FIFA</option>
+          <option value="soccer_conmebol_copa_libertadores">Fútbol — Copa Libertadores</option>
+          <option value="soccer_uefa_champs_league">Fútbol — Champions League</option>
+          <option value="basketball_nba">Basketball — NBA</option>
+          <option value="americanfootball_nfl">American Football — NFL</option>
+          <option value="baseball_mlb">Baseball — MLB</option>
+          <option value="mma_mixed_martial_arts">MMA</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Casa preferida</label>
+        <select id="s-book">
+          <option value="">Mejor disponible</option>
+          <option value="bet365">Bet365</option>
+          <option value="draftkings">DraftKings</option>
+          <option value="betway">Betway</option>
+          <option value="williamhill">William Hill</option>
+          <option value="unibet">Unibet</option>
+          <option value="pinnacle">Pinnacle</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="saveSettings()" style="width:100%;padding:12px">Guardar configuración</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──
+let cfg = JSON.parse(localStorage.getItem('hulvor-cfg') || '{}');
+cfg = Object.assign({oddsKey:'',capital:1000,minRoi:0.5,feePoly:2,maxPoly:0.95,minOdds:1.10,fx:17.5,sport:'soccer_epl',book:''}, cfg);
+let opportunities = [];
+let historyLog = JSON.parse(localStorage.getItem('hulvor-history') || '[]');
+let selectedId = null;
+let creditsLeft = null;
+let deferredInstall = null;
+
+// ── PWA INSTALL ──
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  document.getElementById('install-banner').style.display = 'flex';
+});
+function installPWA() {
+  if (deferredInstall) {
+    deferredInstall.prompt();
+    deferredInstall.userChoice.then(() => {
+      document.getElementById('install-banner').style.display = 'none';
+      deferredInstall = null;
+    });
+  }
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// ── MATH ENGINE ──
+const impliedProb = d => 1 / d;
+const hasArb = (p, d) => p + impliedProb(d) < 1;
+const calcMargin = (p, d) => 1 - (p + impliedProb(d));
+const calcRoi = (p, d) => (1 / (p + impliedProb(d))) - 1;
+
+function calcStakes(p, d, C, feePoly = 0) {
+  const expo = C / (p + impliedProb(d));
+  const sp = expo * p;
+  const sb = expo * impliedProb(d);
+  const gA = expo - C;
+  const gB = (sb * d) - C;
+  const netA = gA - (gA * (feePoly / 100));
+  return { exposure: expo, stakePoly: sp, stakeBook: sb, gainA: gA, gainB: gB, netGainA: netA, netGainB: gB };
+}
+
+function calcLimits(p, d) {
+  return { maxPolyPrice: 1 - (1 / d) - 0.001, minBookOdds: 1 / (1 - p) + 0.001 };
+}
+
+function validateMarket(mtype, conf) {
+  const risks = [];
+  let isBinary = true;
+  if (mtype === 'draw_risk') { isBinary = false; risks.push('Riesgo empate'); }
+  if (mtype === 'push_risk') { isBinary = false; risks.push('Riesgo push/void'); }
+  return { isBinary, risks, confidence: conf };
+}
+
+function classifyOpp(p, d, roi, val, minRoi) {
+  if (!val.isBinary || val.confidence === 'baja') return 'NO_TOMABLE';
+  if (!hasArb(p, d) || roi * 100 < minRoi) return 'NO_TOMABLE';
+  if (val.confidence === 'media') return 'REVISAR';
+  return 'TOMABLE';
+}
+
+const fmt = (n, d = 2) => isNaN(n) ? '—' : Number(n).toFixed(d);
+const fmtC = n => '$' + fmt(n);
+const E = id => document.getElementById(id);
+
+// ── APIs ──
+async function fetchOdds(sport, apiKey) {
+  const book = cfg.book ? `&bookmakers=${cfg.book}` : '';
+  const url = `https://api.the-odds-api.com/v4/sports/${sport}/odds/?apiKey=${apiKey}&regions=eu&markets=h2h&oddsFormat=decimal${book}`;
+  const r = await fetch(url);
+  if (!r.ok) { const e = await r.json(); throw new Error(e.message || 'Error API'); }
+  const remaining = r.headers.get('x-requests-remaining');
+  if (remaining) {
+    creditsLeft = parseInt(remaining);
+    const el = E('credits-display');
+    el.textContent = creditsLeft + ' créditos';
+    el.style.display = 'block';
+  }
+  return r.json();
+}
+
+async function fetchPolymarkets() {
+  try {
+    const r = await fetch('https://clob.polymarket.com/markets?next_cursor=&limit=50');
+    if (!r.ok) return [];
+    const data = await r.json();
+    return data.data || [];
+  } catch { return []; }
+}
+
+// ── SCAN ──
+async function runScan() {
+  const key = E('s-odds-key').value.trim() || cfg.oddsKey;
+  if (!key) { showMsg('error', 'Ingresa tu API key en Config primero.'); showTab('settings'); return; }
+  cfg.oddsKey = key;
+  saveSettings(true);
+
+  const btn = E('btn-scan');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Escaneando...';
+  showMsg('info', 'Consultando The Odds API y Polymarket...');
+
+  try {
+    const sport = E('s-sport').value || cfg.sport;
+    const [oddsData, polyMarkets] = await Promise.all([fetchOdds(sport, key), fetchPolymarkets()]);
+    const found = [];
+
+    // Cross-book arbitrage (entre casas)
+    for (const game of oddsData.slice(0, 20)) {
+      const allOutcomes = [];
+      for (const bm of (game.bookmakers || [])) {
+        const h2h = bm.markets.find(m => m.key === 'h2h');
+        if (!h2h) continue;
+        for (const o of h2h.outcomes) allOutcomes.push({ book: bm.title, name: o.name, odds: o.price });
+      }
+      const byOutcome = {};
+      for (const o of allOutcomes) {
+        if (!byOutcome[o.name] || byOutcome[o.name].odds < o.odds) byOutcome[o.name] = o;
+      }
+      const names = Object.keys(byOutcome);
+      if (names.length === 2) {
+        const [a, b] = names;
+        const oddsA = byOutcome[a].odds, oddsB = byOutcome[b].odds;
+        const p = 1 / oddsA;
+        const arb = hasArb(p, oddsB);
+        const roi = arb ? calcRoi(p, oddsB) : 0;
+        if (roi * 100 < cfg.minRoi && !arb) continue;
+        const stakes = calcStakes(p, oddsB, cfg.capital, 0);
+        const limits = calcLimits(p, oddsB);
+        const val = { isBinary: true, risks: [], confidence: 'alta' };
+        const status = classifyOpp(p, oddsB, roi, val, cfg.minRoi);
+        found.push({
+          id: Date.now() + Math.random(), event: `${game.home_team} vs ${game.away_team}`,
+          sport: game.sport_title || sport, commenceTime: game.commence_time,
+          polyName: `${a} — ${byOutcome[a].book}`, polyOutcome: a, polyPrice: p,
+          bookName: byOutcome[b].book, bookOutcome: b, bookOdds: oddsB,
+          capital: cfg.capital, feePoly: 0, arb, roi, stakes, limits, validation: val,
+          status, isCrossBook: true, scannedAt: new Date().toISOString()
+        });
+      }
+
+      // Polymarket match
+      for (const bm of (game.bookmakers || [])) {
+        const h2h = bm.markets.find(m => m.key === 'h2h');
+        if (!h2h) continue;
+        for (const outcome of h2h.outcomes) {
+          const bookOdds = outcome.price;
+          if (bookOdds < cfg.minOdds) continue;
+          const polyMatch = polyMarkets.find(pm => {
+            const q = (pm.question || '').toLowerCase();
+            const team = outcome.name.toLowerCase().split(' ');
+            return team.some(w => w.length > 3 && q.includes(w));
+          });
+          if (!polyMatch) continue;
+          const polyPrice = polyMatch.tokens?.[0]?.price ? parseFloat(polyMatch.tokens[0].price) : null;
+          if (!polyPrice || polyPrice <= 0 || polyPrice >= 1 || polyPrice > cfg.maxPoly) continue;
+          const arb = hasArb(polyPrice, bookOdds);
+          const roi = arb ? calcRoi(polyPrice, bookOdds) : 0;
+          const stakes = calcStakes(polyPrice, bookOdds, cfg.capital, cfg.feePoly);
+          const limits = calcLimits(polyPrice, bookOdds);
+          const val = { isBinary: true, risks: [], confidence: 'media' };
+          const status = classifyOpp(polyPrice, bookOdds, roi, val, cfg.minRoi);
+          found.push({
+            id: Date.now() + Math.random(), event: `${game.home_team} vs ${game.away_team}`,
+            sport: game.sport_title || sport, commenceTime: game.commence_time,
+            polyName: polyMatch.question, polyOutcome: 'YES', polyPrice,
+            bookName: bm.title, bookOutcome: outcome.name, bookOdds,
+            capital: cfg.capital, feePoly: cfg.feePoly, arb, roi, stakes, limits,
+            validation: val, status, isCrossBook: false, scannedAt: new Date().toISOString()
+          });
+        }
+      }
+    }
+
+    // Sort by ROI desc
+    found.sort((a, b) => b.roi - a.roi);
+    opportunities = found;
+
+    const tomable = found.filter(o => o.status === 'TOMABLE').length;
+    if (found.length === 0) {
+      showMsg('info', `${oddsData.length} eventos escaneados. Sin oportunidades con ROI ≥ ${cfg.minRoi}%. Prueba bajando el mínimo en Config.`);
+    } else {
+      showMsg('success', `${found.length} oportunidades detectadas — ${tomable} tomables. Créditos restantes: ${creditsLeft ?? '—'}/500`);
+    }
+  } catch (e) {
+    showMsg('error', 'Error: ' + e.message + '. Verifica tu API key.');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-refresh"></i> Escanear';
+  updateMetrics();
+  renderOpps();
+}
+
+function showMsg(type, msg) {
+  const cls = type === 'error' ? 'msg-error' : type === 'success' ? 'msg-success' : 'msg-info';
+  E('msg-area').innerHTML = `<div class="msg ${cls}">${msg}</div>`;
+}
+
+function updateMetrics() {
+  const tomable = opportunities.filter(o => o.status === 'TOMABLE');
+  const revisar = opportunities.filter(o => o.status === 'REVISAR');
+  const bestRoi = opportunities.length > 0 ? Math.max(...opportunities.map(o => o.roi * 100)) : 0;
+  E('m-total').textContent = opportunities.length;
+  E('m-tomable').textContent = tomable.length;
+  E('m-revisar').textContent = revisar.length;
+  E('m-roi').textContent = fmt(bestRoi) + '%';
+  E('m-capital').textContent = fmtC(tomable.reduce((a, o) => a + o.capital, 0));
+}
+
+function renderOpps() {
+  const filter = E('filter-status').value;
+  const filtered = filter === 'all' ? opportunities : opportunities.filter(o => o.status === filter);
+  if (!filtered.length && !opportunities.length) {
+    E('opp-list').innerHTML = '<div class="empty"><i class="ti ti-radar"></i>Configura tu API key<br>en <strong>Config</strong> y presiona<br><strong>Escanear</strong></div>';
+    return;
+  }
+  if (!filtered.length) { E('opp-list').innerHTML = '<div class="empty"><i class="ti ti-filter"></i>Sin oportunidades<br>con este filtro</div>'; return; }
+
+  E('opp-list').innerHTML = filtered.map(o => {
+    const isSelected = selectedId === o.id;
+    const dateStr = o.commenceTime ? new Date(o.commenceTime).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) : '';
+    return `<div class="opp-card${isSelected ? ' selected' : ''}" onclick="selectOpp(${JSON.stringify(o.id)})">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div class="opp-event">${o.event}</div>
+          <div class="opp-meta">${o.sport}${dateStr ? ' · ' + dateStr : ''} · ${o.bookName}</div>
+          <div class="badges">
+            ${badgeStatus(o.status)} ${badgeConf(o.validation.confidence)}
+            ${o.isCrossBook ? '<span class="badge badge-cross">cross-book</span>' : '<span class="badge" style="background:var(--blue-light);color:var(--blue-dark)">polymarket</span>'}
+            ${o.validation.risks.map(r => `<span class="risk-tag">${r}</span>`).join('')}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="roi-badge ${o.arb ? 'pos' : 'neg'}">${fmt(o.roi * 100)}%</div>
+          <div style="font-size:10px;color:var(--text3)">ROI bruto</div>
+        </div>
+      </div>
+      <div class="opp-numbers">
+        <div><div class="opp-num-label">${o.isCrossBook ? o.polyOutcome : 'Polymarket YES'}</div><div class="opp-num-val">${fmt(o.polyPrice, 3)} → ${fmtC(o.stakes.stakePoly)}</div></div>
+        <div><div class="opp-num-label">${o.isCrossBook ? o.bookOutcome : 'Casa · ' + fmt(o.bookOdds)}</div><div class="opp-num-val">${fmtC(o.stakes.stakeBook)}</div></div>
+        <div><div class="opp-num-label">Gan. esc. A</div><div class="opp-num-val pos">${fmtC(o.stakes.netGainA)}</div></div>
+        <div><div class="opp-num-label">Gan. esc. B</div><div class="opp-num-val pos">${fmtC(o.stakes.netGainB)}</div></div>
+      </div>
+      ${isSelected ? renderDetail(o) : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderDetail(o) {
+  const checks = [
+    { ok: o.validation.isBinary, label: 'Mercado binario puro' },
+    { ok: !o.validation.risks.some(r => r.includes('empate')), label: 'Sin riesgo de empate' },
+    { ok: !o.validation.risks.some(r => r.includes('push')), label: 'Sin riesgo push/void' },
+    { ok: o.validation.confidence === 'alta', label: 'Misma regla de liquidación' },
+    { ok: o.arb, label: 'Arbitraje matemático confirmado' },
+    { ok: o.roi * 100 >= cfg.minRoi, label: `ROI supera mínimo (${cfg.minRoi}%)` },
+  ];
+  return `<div class="detail">
+    <div class="detail-sides"><strong>Lado A:</strong> ${o.isCrossBook ? o.polyOutcome + ' — ' + o.polyName : 'Polymarket YES — ' + o.polyName}<br><strong>Lado B:</strong> ${o.isCrossBook ? o.bookOutcome + ' — ' + o.bookName : o.bookName + ' cuota ' + fmt(o.bookOdds)}</div>
+    <div class="scenarios">
+      <div class="scenario"><div class="sc-label">Si gana lado A</div><div class="sc-gain">${fmtC(o.stakes.netGainA)}</div><div class="sc-sub">Stake: ${fmtC(o.stakes.stakePoly)}</div></div>
+      <div class="scenario"><div class="sc-label">Si gana lado B</div><div class="sc-gain">${fmtC(o.stakes.netGainB)}</div><div class="sc-sub">Stake: ${fmtC(o.stakes.stakeBook)}</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Diferencia entre escenarios: ${fmtC(Math.abs(o.stakes.netGainA - o.stakes.netGainB))}</div>
+    <div class="limits">
+      <div class="limit-box"><div class="limit-label">Precio máx. lado A</div><div class="limit-val">${fmt(o.limits.maxPolyPrice, 4)}</div></div>
+      <div class="limit-box"><div class="limit-label">Cuota mín. lado B</div><div class="limit-val">${fmt(o.limits.minBookOdds, 4)}</div></div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px">Checklist</div>
+    <div class="checklist">${checks.map(c => `<div class="check-item"><div class="check-dot ${c.ok ? 'check-ok' : 'check-fail'}"><i class="ti ti-${c.ok ? 'check' : 'x'}"></i></div><span style="font-size:13px">${c.label}</span></div>`).join('')}</div>
+    <div class="action-btns">
+      <button class="btn-primary" onclick="markAction(${JSON.stringify(o.id)},'tomada',event)">Tomada</button>
+      <button class="btn-secondary" onclick="markAction(${JSON.stringify(o.id)},'ignorada',event)">Ignorar</button>
+      <button class="btn-danger" onclick="markAction(${JSON.stringify(o.id)},'vencida',event)">Vencida</button>
+    </div>
+  </div>`;
+}
+
+const badgeStatus = s => s === 'TOMABLE' ? '<span class="badge badge-tomable">✓ Tomable</span>' : s === 'REVISAR' ? '<span class="badge badge-revisar">⚠ Revisar</span>' : '<span class="badge badge-no">✕ No tomable</span>';
+const badgeConf = c => c === 'alta' ? '<span class="badge badge-alta">Alta</span>' : c === 'media' ? '<span class="badge badge-media">Media</span>' : '<span class="badge badge-no">Baja</span>';
+
+function selectOpp(id) {
+  selectedId = selectedId === id ? null : id;
+  renderOpps();
+}
+
+function markAction(id, action, ev) {
+  if (ev) ev.stopPropagation();
+  const o = opportunities.find(x => x.id === id);
+  if (o) {
+    historyLog.unshift({ ...o, histStatus: action, histDate: new Date().toISOString() });
+    localStorage.setItem('hulvor-history', JSON.stringify(historyLog.slice(0, 100)));
+    opportunities = opportunities.filter(x => x.id !== id);
+    selectedId = null;
+    updateMetrics();
+    renderOpps();
+  }
+}
+
+// ── CALCULADORA ──
+function calcManual() {
+  const p = parseFloat(E('c-poly').value) || 0;
+  const d = parseFloat(E('c-odds').value) || 0;
+  const C = parseFloat(E('c-capital').value) || 0;
+  const feePoly = parseFloat(E('c-fee-poly').value) || 0;
+  const val = validateMarket(E('c-mtype').value, E('c-conf').value);
+  const arb = hasArb(p, d);
+  const roi = arb ? calcRoi(p, d) : 0;
+  const s = arb ? calcStakes(p, d, C, feePoly) : { stakePoly: 0, stakeBook: 0, gainA: 0, gainB: 0, netGainA: 0, netGainB: 0 };
+  const limits = calcLimits(p, d);
+  const status = classifyOpp(p, d, roi, val, cfg.minRoi);
+  const stColor = status === 'TOMABLE' ? 'var(--green)' : status === 'REVISAR' ? 'var(--amber)' : 'var(--red)';
+
+  E('calc-result').innerHTML = `<div class="calc-result">
+    <div class="result-status" style="color:${stColor}">${status}</div>
+    <div class="result-grid">
+      ${[['Monto Polymarket', fmtC(s.stakePoly)], ['Monto casa', fmtC(s.stakeBook)],
+         ['Gan. bruta A', fmtC(s.gainA)], ['Gan. bruta B', fmtC(s.gainB)],
+         ['Gan. neta A', fmtC(s.netGainA)], ['Gan. neta B', fmtC(s.netGainB)],
+         ['ROI bruto', fmt(roi * 100) + '%'], ['Margen', fmt(calcMargin(p, d) * 100, 3) + '%'],
+         ['Precio máx. Poly', fmt(limits.maxPolyPrice, 4)], ['Cuota mín. casa', fmt(limits.minBookOdds, 4)]
+      ].map(([l, v]) => `<div class="result-item"><div class="result-label">${l}</div><div class="result-val">${v}</div></div>`).join('')}
+    </div>
+    ${val.risks.length ? `<div style="margin-top:10px;font-size:12px;color:var(--red)">⚠ ${val.risks.join(' · ')}</div>` : ''}
+  </div>`;
+}
+
+function saveManualOpp() {
+  const p = parseFloat(E('c-poly').value) || 0;
+  const d = parseFloat(E('c-odds').value) || 0;
+  const C = parseFloat(E('c-capital').value) || 0;
+  const feePoly = parseFloat(E('c-fee-poly').value) || 0;
+  const val = validateMarket(E('c-mtype').value, E('c-conf').value);
+  const arb = hasArb(p, d);
+  const roi = arb ? calcRoi(p, d) : 0;
+  opportunities.push({
+    id: Date.now(), event: E('c-event').value || 'Evento manual', sport: 'Manual',
+    polyName: E('c-event').value, polyOutcome: 'YES', polyPrice: p,
+    bookName: E('c-book').value || 'Casa', bookOutcome: 'NO', bookOdds: d,
+    capital: C, feePoly, arb, roi,
+    stakes: calcStakes(p, d, C, feePoly), limits: calcLimits(p, d),
+    validation: val, status: classifyOpp(p, d, roi, val, cfg.minRoi),
+    isCrossBook: false, scannedAt: new Date().toISOString()
+  });
+  updateMetrics();
+  showTab('dashboard');
+  renderOpps();
+}
+
+// ── SETTINGS ──
+function saveSettings(silent = false) {
+  cfg.oddsKey = E('s-odds-key').value.trim() || cfg.oddsKey;
+  cfg.capital = parseFloat(E('s-capital')?.value) || 1000;
+  cfg.minRoi = parseFloat(E('s-min-roi')?.value) || 0.5;
+  cfg.feePoly = parseFloat(E('s-fee-poly')?.value) || 2;
+  cfg.maxPoly = parseFloat(E('s-max-poly')?.value) || 0.95;
+  cfg.minOdds = parseFloat(E('s-min-odds')?.value) || 1.10;
+  cfg.fx = parseFloat(E('s-fx')?.value) || 17.5;
+  cfg.sport = E('s-sport')?.value || cfg.sport;
+  cfg.book = E('s-book')?.value || '';
+  localStorage.setItem('hulvor-cfg', JSON.stringify(cfg));
+  if (!silent) { showTab('dashboard'); showMsg('success', 'Configuración guardada. Presiona Escanear.'); }
+}
+
+function loadSettings() {
+  if (E('s-odds-key')) E('s-odds-key').value = cfg.oddsKey;
+  if (E('s-capital')) E('s-capital').value = cfg.capital;
+  if (E('s-min-roi')) E('s-min-roi').value = cfg.minRoi;
+  if (E('s-fee-poly')) E('s-fee-poly').value = cfg.feePoly;
+  if (E('s-max-poly')) E('s-max-poly').value = cfg.maxPoly;
+  if (E('s-min-odds')) E('s-min-odds').value = cfg.minOdds;
+  if (E('s-fx')) E('s-fx').value = cfg.fx;
+  if (E('s-sport')) E('s-sport').value = cfg.sport;
+  if (E('s-book')) E('s-book').value = cfg.book;
+}
+
+// ── HISTORY ──
+function renderHistory() {
+  if (!historyLog.length) { E('history-list').innerHTML = '<div class="empty" style="padding:1.5rem 0"><i class="ti ti-clock"></i>Sin historial aún</div>'; return; }
+  E('history-list').innerHTML = historyLog.map(h => `<div class="hist-row">
+    <div><div style="font-weight:600;font-size:13px">${h.event}</div><div style="font-size:11px;color:var(--text3)">${h.bookName} · ${new Date(h.histDate).toLocaleDateString('es-MX')}</div></div>
+    <div style="text-align:right">${badgeStatus(h.status)}<div style="font-size:11px;color:var(--text3);margin-top:3px">ROI ${fmt(h.roi * 100)}% · ${h.histStatus}</div></div>
+  </div>`).join('');
+}
+
+// ── TABS ──
+function showTab(t) {
+  ['dashboard', 'calc', 'history', 'settings'].forEach(id => {
+    E('view-' + id).style.display = t === id ? 'block' : 'none';
+    const tab = E('tab-' + id);
+    if (tab) tab.className = 'tab' + (t === id ? ' active' : '');
+  });
+  if (t === 'history') renderHistory();
+  if (t === 'calc') calcManual();
+  if (t === 'settings') loadSettings();
+}
+
+// ── INIT ──
+updateMetrics();
+calcManual();
+</script>
+</body>
+</html>
