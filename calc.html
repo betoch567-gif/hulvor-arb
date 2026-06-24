@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>HulvorArb — Calculadora</title>
+<meta name="theme-color" content="#185FA5"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="HulvorArb"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0f0f0f;color:#f0f0f0;font-size:16px}
+.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.header{background:#185FA5;padding:16px;padding-top:calc(16px + env(safe-area-inset-top))}
+.logo{font-size:20px;font-weight:700;letter-spacing:-0.03em;color:#fff}
+.logo span{opacity:0.6;font-weight:400}
+.subtitle{font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px}
+.content{flex:1;overflow-y:auto;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+.card{background:#1a1a1a;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid #2a2a2a}
+.card-title{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px}
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;color:#888;margin-bottom:6px;font-weight:500}
+.field input{width:100%;background:#111;border:1px solid #333;border-radius:10px;padding:12px 14px;font-size:16px;color:#fff;font-family:inherit;-webkit-appearance:none}
+.field input:focus{outline:none;border-color:#185FA5}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.casa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.casa-btn{background:#111;border:1px solid #333;border-radius:10px;padding:12px 8px;font-size:14px;color:#aaa;cursor:pointer;font-family:inherit;text-align:center}
+.casa-btn.active{background:#185FA5;border-color:#185FA5;color:#fff;font-weight:600}
+.btn-calc{width:100%;background:#185FA5;color:#fff;border:none;border-radius:12px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+.resultado{display:none}
+.resultado.show{display:block}
+.status-bar{border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center}
+.status-bar.tomable{background:#0a2a1a;border:1px solid #1a5c35}
+.status-bar.no{background:#2a0a0a;border:1px solid #5c1a1a}
+.status-label{font-size:20px;font-weight:800}
+.status-label.tomable{color:#4ade80}
+.status-label.no{color:#f87171}
+.status-sub{font-size:13px;margin-top:4px;color:#aaa}
+.stakes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stake-box{background:#111;border-radius:12px;padding:14px;border:1px solid #2a2a2a}
+.stake-where{font-size:11px;color:#888;margin-bottom:4px;font-weight:600;text-transform:uppercase}
+.stake-amount{font-size:24px;font-weight:800;color:#fff}
+.stake-detail{font-size:11px;color:#666;margin-top:4px}
+.ganancias{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.gan-box{background:#0a2a1a;border-radius:12px;padding:14px;border:1px solid #1a5c35;text-align:center}
+.gan-label{font-size:11px;color:#4ade80;margin-bottom:4px;font-weight:600}
+.gan-amount{font-size:20px;font-weight:800;color:#4ade80}
+.limits-box{background:#111;border-radius:12px;padding:14px;border:1px solid #2a2a2a;margin-bottom:14px}
+.limits-title{font-size:12px;color:#888;margin-bottom:10px;font-weight:600;text-transform:uppercase}
+.limit-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #222;font-size:13px}
+.limit-row:last-child{border-bottom:none}
+.limit-label{color:#888}
+.limit-val{color:#fbbf24;font-weight:700}
+.warning-box{background:#2a1a05;border:1px solid #854f0b;border-radius:12px;padding:12px 14px;font-size:13px;color:#fbbf24;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="logo">Hulvor<span>Arb</span></div>
+    <div class="subtitle">Calculadora de arbitraje</div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="card-title">1 · Polymarket</div>
+      <div class="field">
+        <label>Precio YES en Polymarket (ej. 0.62)</label>
+        <input type="number" id="poly" placeholder="0.62" step="0.01" min="0.01" max="0.99" oninput="calcular()"/>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">2 · Casa de apuestas</div>
+      <div class="field">
+        <label>¿En qué casa?</label>
+        <div class="casa-grid">
+          <button class="casa-btn active" onclick="setCasa('Caliente',this)">Caliente</button>
+          <button class="casa-btn" onclick="setCasa('BetVip',this)">BetVip</button>
+          <button class="casa-btn" onclick="setCasa('Draftea',this)">Draftea</button>
+          <button class="casa-btn" onclick="setCasa('Otra',this)">Otra</button>
+        </div>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Cuota decimal en la casa (ej. 2.80)</label>
+        <input type="number" id="odds" placeholder="2.80" step="0.01" min="1.01" oninput="calcular()"/>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">3 · Capital</div>
+      <div class="row2">
+        <div class="field">
+          <label>Total a usar (USD)</label>
+          <input type="number" id="capital" value="100" min="1" oninput="calcular()"/>
+        </div>
+        <div class="field">
+          <label>Fee Polymarket %</label>
+          <input type="number" id="fee" value="2" step="0.1" oninput="calcular()"/>
+        </div>
+      </div>
+      <button class="btn-calc" onclick="calcular()">Calcular →</button>
+    </div>
+    <div class="resultado" id="resultado">
+      <div class="status-bar" id="sbar">
+        <div class="status-label" id="slabel">—</div>
+        <div class="status-sub" id="ssub">—</div>
+      </div>
+      <div id="warnbox"></div>
+      <div class="stakes">
+        <div class="stake-box">
+          <div class="stake-where">Polymarket</div>
+          <div class="stake-amount" id="spoly">—</div>
+          <div class="stake-detail">Compra YES</div>
+        </div>
+        <div class="stake-box">
+          <div class="stake-where" id="scasa">Casa</div>
+          <div class="stake-amount" id="scasamt">—</div>
+          <div class="stake-detail">Apuesta NO</div>
+        </div>
+      </div>
+      <div class="ganancias">
+        <div class="gan-box">
+          <div class="gan-label">Si YES gana</div>
+          <div class="gan-amount" id="ga">—</div>
+        </div>
+        <div class="gan-box">
+          <div class="gan-label">Si NO gana</div>
+          <div class="gan-amount" id="gb">—</div>
+        </div>
+      </div>
+      <div class="limits-box">
+        <div class="limits-title">⚠️ Deja de tomar si...</div>
+        <div class="limit-row">
+          <span class="limit-label">Precio Polymarket sube de</span>
+          <span class="limit-val" id="lpoly">—</span>
+        </div>
+        <div class="limit-row">
+          <span class="limit-label">Cuota de la casa baja de</span>
+          <span class="limit-val" id="lodds">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let casa='Caliente';
+function setCasa(n,btn){
+  casa=n;
+  document.querySelectorAll('.casa-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('scasa').textContent=n;
+}
+function f(n){return'$'+Number(n).toFixed(2)}
+function calcular(){
+  const p=parseFloat(document.getElementById('poly').value);
+  const d=parseFloat(document.getElementById('odds').value);
+  const C=parseFloat(document.getElementById('capital').value)||100;
+  const fee=parseFloat(document.getElementById('fee').value)||0;
+  const res=document.getElementById('resultado');
+  if(!p||!d||p<=0||p>=1||d<=1){res.classList.remove('show');return}
+  res.classList.add('show');
+  const invD=1/d;
+  const suma=p+invD;
+  const hayArb=suma<1;
+  const roi=(1/suma)-1;
+  const exposure=C/suma;
+  const sPoly=exposure*p;
+  const sCasa=exposure*invD;
+  const gA=(exposure-C)*(1-fee/100);
+  const gB=(sCasa*d)-C;
+  const maxPoly=1-invD-0.0001;
+  const minOdds=1/(1-p)+0.0001;
+  const sb=document.getElementById('sbar');
+  const sl=document.getElementById('slabel');
+  const ss=document.getElementById('ssub');
+  const wb=document.getElementById('warnbox');
+  if(hayArb){
+    sb.className='status-bar tomable';
+    sl.className='status-label tomable';
+    sl.textContent='✓ TOMABLE';
+    ss.textContent='ROI '+(roi*100).toFixed(2)+'%';
+    wb.innerHTML='';
+  } else {
+    sb.className='status-bar no';
+    sl.className='status-label no';
+    sl.textContent='✕ NO HAY ARBITRAJE';
+    ss.textContent='Suma '+(suma*100).toFixed(1)+'% — necesita ser menor a 100%';
+    wb.innerHTML='<div class="warning-box">Con estos precios no hay ganancia garantizada.</div>';
+  }
+  document.getElementById('spoly').textContent=f(sPoly);
+  document.getElementById('scasa').textContent=casa;
+  document.getElementById('scasamt').textContent=f(sCasa);
+  document.getElementById('ga').textContent=f(gA);
+  document.getElementById('gb').textContent=f(gB);
+  document.getElementById('lpoly').textContent=maxPoly.toFixed(3);
+  document.getElementById('lodds').textContent=minOdds.toFixed(2);
+}
+</script>
+</body>
+</html>
